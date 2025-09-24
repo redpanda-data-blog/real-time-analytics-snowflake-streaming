@@ -1,0 +1,45 @@
+input:
+  label: "stock_to_snow_topic_input"
+  kafka_franz:
+    seed_brokers: ["<Redpanda bootstrap URL>"]
+    topics: ["stock_data"]
+    consumer_group: "stock_to_snow_group"
+    tls:
+      enabled: true
+    sasl:
+      - mechanism: SCRAM-SHA-256
+        username: ${secrets.STOCK_TO_SNOW_RP_USER}
+        password: ${secrets.STOCK_TO_SNOW_RP_PASS}
+    batching:
+      byte_size: 16777216
+
+output:
+  fallback:
+  - label: "stock_to_snow_table_output"
+    snowflake_streaming:
+      account: ${secrets.STOCK_TO_SNOW_ACCT} 
+      user: ${secrets.STOCK_TO_SNOW_USER} 
+      role: ${secrets.STOCK_TO_SNOW_ROLE} 
+      database: ${secrets.STOCK_TO_SNOW_DB}  
+      schema: ${secrets.STOCK_TO_SNOW_SCHEMA} 
+      table: stock_data_raw
+      private_key: "${secrets.STOCK_TO_SNOW_KEY}" 
+      private_key_pass: "${secrets.STOCK_TO_SNOW_KEY_PASS}"
+      max_in_flight: 32 
+      build_options:
+        parallelism: 7
+      channel_prefix: "${REDPANDA_PIPELINE_ID}-"
+      schema_evolution:
+        enabled: true
+  - retry:
+      output:
+        label: "stock_to_snow_dlq_output"
+        kafka_franz:
+          seed_brokers: ["<Redpanda bootstrap URL>"]
+          tls:
+            enabled: true
+          sasl:
+            - mechanism: SCRAM-SHA-256
+              username: ${secrets.STOCK_TO_SNOW_RP_USER}
+              password: ${secrets.STOCK_TO_SNOW_RP_PASS}
+          topic: stock_to_snow_dlq
