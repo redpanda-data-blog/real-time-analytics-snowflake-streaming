@@ -1,0 +1,13 @@
+[Unit]
+Description=Redpanda Connect Pipeline
+After=network.target
+
+[Service]
+ExecStart=/home/ubuntu/.local/bin/rpk connect run /home/ubuntu/pipeline.yaml 
+Restart=always
+User=ubuntu
+Environment="REDPANDA_PIPELINE_ID=%H"
+Environment="REDPANDA_LICENSE_FILEPATH=/home/ubuntu/redpanda.license"
+
+[Install]
+WantedBy=multi-user.target
