@@ -1,45 +1,213 @@
 input:
-  label: "stock_to_snow_topic_input"
-  kafka_franz:
-    seed_brokers: ["<Redpanda bootstrap URL>"]
-    topics: ["stock_data"]
-    consumer_group: "stock_to_snow_group"
-    tls:
-      enabled: true
-    sasl:
-      - mechanism: SCRAM-SHA-256
-        username: ${secrets.STOCK_TO_SNOW_RP_USER}
-        password: ${secrets.STOCK_TO_SNOW_RP_PASS}
-    batching:
-      byte_size: 16777216
-
-output:
-  fallback:
-  - label: "stock_to_snow_table_output"
-    snowflake_streaming:
-      account: ${secrets.STOCK_TO_SNOW_ACCT} 
-      user: ${secrets.STOCK_TO_SNOW_USER} 
-      role: ${secrets.STOCK_TO_SNOW_ROLE} 
-      database: ${secrets.STOCK_TO_SNOW_DB}  
-      schema: ${secrets.STOCK_TO_SNOW_SCHEMA} 
-      table: stock_data_raw
-      private_key: "${secrets.STOCK_TO_SNOW_KEY}" 
-      private_key_pass: "${secrets.STOCK_TO_SNOW_KEY_PASS}"
-      max_in_flight: 32 
-      build_options:
-        parallelism: 7
-      channel_prefix: "${REDPANDA_PIPELINE_ID}-"
-      schema_evolution:
-        enabled: true
-  - retry:
-      output:
-        label: "stock_to_snow_dlq_output"
-        kafka_franz:
-          seed_brokers: ["<Redpanda bootstrap URL>"]
+  label: "test_data_input"
+  broker:
+    copies: 10
+    inputs:
+      - kafka_franz:
+          seed_brokers:
+            - "<Redpanda Kafka API URLs>"
+          topics: ["<topic>"]
+          consumer_group: "<consumer-group>"
           tls:
             enabled: true
-          sasl:
-            - mechanism: SCRAM-SHA-256
-              username: ${secrets.STOCK_TO_SNOW_RP_USER}
-              password: ${secrets.STOCK_TO_SNOW_RP_PASS}
-          topic: stock_to_snow_dlq
+          checkpoint_limit: 250000
+          batching:
+            count: 1000
+
+pipeline:
+  processors:
+    - label: "test_data_decode"
+      schema_registry_decode:
+        url: "<Redpanda Schema Registry URL>"
+        tls:
+        avro:
+          raw_unions: true
+          preserve_logical_types: true
+          
+#Note that unlike the broker setting on the input, we have to run unique outputs due to requiring unique Snowflake channel prefixes.
+output:
+  label: "snowflake_table_output"
+  broker:
+    copies: 1
+    pattern: greedy
+    outputs:
+    - snowflake_streaming:
+        account: <Snowflake Account>
+        user: <Snowflake User>
+        role: <Snowflake Role>
+        database: <Snowflake DB>  
+        schema: <Snowflake Schema>
+        table: <Snowflake table>
+        private_key_file: "<Path on disk to Snowflake key>"
+        private_key_pass: <passphrase>
+        max_in_flight: 16 
+        batching:
+          count: 32000
+        build_options:
+          parallelism: 40
+        channel_prefix: "${REDPANDA_PIPELINE_ID}-0-"
+        schema_evolution:
+          enabled: true
+    - snowflake_streaming:
+        account: <Snowflake Account>
+        user: <Snowflake User>
+        role: <Snowflake Role>
+        database: <Snowflake DB>  
+        schema: <Snowflake Schema>
+        table: <Snowflake table>
+        private_key_file: "<Path on disk to Snowflake key>"
+        private_key_pass: <passphrase>
+        max_in_flight: 16 
+        batching:
+          count: 32000
+        build_options:
+          parallelism: 40
+        channel_prefix: "${REDPANDA_PIPELINE_ID}-1-"
+        schema_evolution:
+          enabled: true   
+    - snowflake_streaming:
+        account: <Snowflake Account>
+        user: <Snowflake User>
+        role: <Snowflake Role>
+        database: <Snowflake DB>  
+        schema: <Snowflake Schema>
+        table: <Snowflake table>
+        private_key_file: "<Path on disk to Snowflake key>"
+        private_key_pass: <passphrase>
+        max_in_flight: 16 
+        batching:
+          count: 32000
+        build_options:
+          parallelism: 40
+        channel_prefix: "${REDPANDA_PIPELINE_ID}-2-"
+        schema_evolution:
+          enabled: true 
+    - snowflake_streaming:
+        account: <Snowflake Account>
+        user: <Snowflake User>
+        role: <Snowflake Role>
+        database: <Snowflake DB>  
+        schema: <Snowflake Schema>
+        table: <Snowflake table>
+        private_key_file: "<Path on disk to Snowflake key>"
+        private_key_pass: <passphrase>
+        max_in_flight: 16 
+        batching:
+          count: 32000
+        build_options:
+          parallelism: 40
+        channel_prefix: "${REDPANDA_PIPELINE_ID}-3-"
+        schema_evolution:
+          enabled: true
+    - snowflake_streaming:
+        account: <Snowflake Account>
+        user: <Snowflake User>
+        role: <Snowflake Role>
+        database: <Snowflake DB>  
+        schema: <Snowflake Schema>
+        table: <Snowflake table>
+        private_key_file: "<Path on disk to Snowflake key>"
+        private_key_pass: <passphrase>
+        max_in_flight: 16 
+        batching:
+          count: 32000
+        build_options:
+          parallelism: 40
+        channel_prefix: "${REDPANDA_PIPELINE_ID}-4-"
+        schema_evolution:
+          enabled: true
+    - snowflake_streaming:
+        account: <Snowflake Account>
+        user: <Snowflake User>
+        role: <Snowflake Role>
+        database: <Snowflake DB>  
+        schema: <Snowflake Schema>
+        table: <Snowflake table>
+        private_key_file: "<Path on disk to Snowflake key>"
+        private_key_pass: <passphrase>
+        max_in_flight: 16 
+        batching:
+          count: 32000
+        build_options:
+          parallelism: 40
+        channel_prefix: "${REDPANDA_PIPELINE_ID}-5-"
+        schema_evolution:
+          enabled: true
+    - snowflake_streaming:
+        account: <Snowflake Account>
+        user: <Snowflake User>
+        role: <Snowflake Role>
+        database: <Snowflake DB>  
+        schema: <Snowflake Schema>
+        table: <Snowflake table>
+        private_key_file: "<Path on disk to Snowflake key>"
+        private_key_pass: <passphrase>
+        max_in_flight: 16 
+        batching:
+          count: 32000
+        build_options:
+          parallelism: 40
+        channel_prefix: "${REDPANDA_PIPELINE_ID}-6-"
+        schema_evolution:
+          enabled: true
+    - snowflake_streaming:
+        account: <Snowflake Account>
+        user: <Snowflake User>
+        role: <Snowflake Role>
+        database: <Snowflake DB>  
+        schema: <Snowflake Schema>
+        table: <Snowflake table>
+        private_key_file: "<Path on disk to Snowflake key>"
+        private_key_pass: <passphrase>
+        max_in_flight: 16 
+        batching:
+          count: 32000
+        build_options:
+          parallelism: 40
+        channel_prefix: "${REDPANDA_PIPELINE_ID}-7-"
+        schema_evolution:
+          enabled: true
+    - snowflake_streaming:
+        account: <Snowflake Account>
+        user: <Snowflake User>
+        role: <Snowflake Role>
+        database: <Snowflake DB>  
+        schema: <Snowflake Schema>
+        table: <Snowflake table>
+        private_key_file: "<Path on disk to Snowflake key>"
+        private_key_pass: <passphrase>
+        max_in_flight: 16 
+        batching:
+          count: 32000
+        build_options:
+          parallelism: 40
+        channel_prefix: "${REDPANDA_PIPELINE_ID}-8-"
+        schema_evolution:
+          enabled: true
+    - snowflake_streaming:
+        account: <Snowflake Account>
+        user: <Snowflake User>
+        role: <Snowflake Role>
+        database: <Snowflake DB>  
+        schema: <Snowflake Schema>
+        table: <Snowflake table>
+        private_key_file: "<Path on disk to Snowflake key>"
+        private_key_pass: <passphrase>
+        max_in_flight: 16 
+        batching:
+          count: 32000
+        build_options:
+          parallelism: 40
+        channel_prefix: "${REDPANDA_PIPELINE_ID}-9-"
+        schema_evolution:
+          enabled: true
+
+metrics:
+  prometheus:
+    add_process_metrics: true
+  mapping: ""
+
+http:
+  enabled: true
+  address: 0.0.0.0:9404
+  debug_endpoints: true 
